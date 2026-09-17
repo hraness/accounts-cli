@@ -1,6 +1,8 @@
 export {
   initiateDeviceLogin,
   pollForDeviceToken,
+  type DeviceLoginHandlers,
+  type DeviceLoginResult,
 } from "./device-login.js";
 export {
   createKeychainTokenStorage,
