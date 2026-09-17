@@ -1,6 +1,6 @@
 {
   "name": "@hraness/accounts-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI authentication SDK for Hraness Accounts.",
   "license": "MIT",
   "type": "module",
@@ -40,7 +40,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "bun test ./src",
