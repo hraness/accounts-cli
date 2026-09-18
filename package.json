@@ -1,6 +1,6 @@
 {
   "name": "@hraness/accounts-cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "CLI authentication SDK for Hraness Accounts.",
   "license": "MIT",
   "type": "module",
@@ -47,7 +47,7 @@
     "check": "bun run lint && bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {
-    "@hraness/suite-accounts": "github:hraness/suite-accounts#21424ee08eb41929c7290cfddfdb479923fb6ba5"
+    "@hraness/suite-accounts": "github:hraness/suite-accounts#v0.9.13"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
