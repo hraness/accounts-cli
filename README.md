@@ -18,7 +18,7 @@ The package is not on npm. Pin a release tag:
 ```
 
 The built `dist/` is committed, so installing from GitHub needs no build step.
-Version 0.1.3 depends on `@hraness/suite-accounts` v0.9.13.
+This release depends on `@hraness/suite-accounts` v0.9.13.
 
 ## Sign in
 
@@ -76,7 +76,9 @@ the interval the server asks for. It returns one of:
 storage you choose. `getAccessToken()` returns the cached access token until it
 expires, then refreshes it with the stored refresh token and saves any new
 refresh token the server returns. It returns `null` when no refresh token is
-stored or the refresh fails. `signOut()` clears the cached token and deletes the
+stored, when the token endpoint answers with an error status, or when the
+response lacks an access token or a positive `expires_in`. A network failure or
+a non-JSON response throws. `signOut()` clears the cached token and deletes the
 stored refresh token; it does not revoke the token with Accounts.
 
 ## Token storage
