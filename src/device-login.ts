@@ -16,7 +16,8 @@ export type DeviceLoginHandlers = Readonly<{
   /**
    * Called once with the same page after `onUserCode`, so a product can open
    * the browser itself (desktop-foundation or its own opener). This package
-   * never opens a browser. A rejection is ignored; the printed link still works.
+   * never opens a browser, and it doesn't wait for the opener. A rejection is
+   * ignored; the printed link still works.
    */
   openBrowser?: (url: string) => void | Promise<void>;
   onPending?: () => void;
@@ -51,12 +52,11 @@ export async function initiateDeviceLogin(
   if (handlers.onUserCode !== undefined) {
     handlers.onUserCode(response.userCode, page);
   }
-  if (handlers.openBrowser !== undefined) {
-    try {
-      await handlers.openBrowser(page);
-    } catch {
-      // The printed link still works.
-    }
+  const openBrowser = handlers.openBrowser;
+  if (openBrowser !== undefined) {
+    // Never wait on the opener: some block until the browser exits, and
+    // polling must start before the code expires. The printed link still works.
+    void Promise.resolve().then(() => openBrowser(page)).catch(() => undefined);
   }
 
   return {

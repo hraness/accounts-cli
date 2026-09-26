@@ -118,7 +118,9 @@ keychain, a denied access prompt, or any other `security` failure throws a
 `KeychainError` with a `code` (`keychain-locked`, `keychain-denied`,
 `keychain-unavailable`, or `keychain-write-failed` for saves), a one-sentence
 `message`, and one `next` step such as `Unlock your login keychain, then try
-again.` `renderKeychainError(error)` prints both lines. Products should show
+again.` Deleting throws the same way when the item stays in place, so
+`signOut()` never reports a sign-out that didn't happen.
+`renderKeychainError(error)` prints both lines. Products should show
 it rather than treat the person as signed out.
 
 ## Menu rows

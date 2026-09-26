@@ -17,7 +17,8 @@ export type DeviceLoginHandlers = Readonly<{
     /**
      * Called once with the same page after `onUserCode`, so a product can open
      * the browser itself (desktop-foundation or its own opener). This package
-     * never opens a browser. A rejection is ignored; the printed link still works.
+     * never opens a browser, and it doesn't wait for the opener. A rejection is
+     * ignored; the printed link still works.
      */
     openBrowser?: (url: string) => void | Promise<void>;
     onPending?: () => void;

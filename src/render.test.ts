@@ -52,6 +52,10 @@ describe("renderDeviceLoginResult", () => {
       .toBe("✗ Couldn't sign in to Ghostget: Accounts is down.\n→ ghostget login\n");
     expect(renderDeviceLoginResult({ kind: "error", error: "invalid_response", errorDescription: null }, { ...login, ...ascii }))
       .toBe("FAIL Couldn't sign in to Ghostget: invalid_response.\n-> ghostget login\n");
+    expect(renderDeviceLoginResult({ kind: "error", error: "server_error", errorDescription: "\u0007" }, login))
+      .toBe("✗ Couldn't sign in to Ghostget: server_error.\n→ ghostget login\n");
+    expect(renderDeviceLoginResult({ kind: "error", error: "", errorDescription: "" }, login))
+      .toBe("✗ Couldn't sign in to Ghostget.\n→ ghostget login\n");
   });
 });
 

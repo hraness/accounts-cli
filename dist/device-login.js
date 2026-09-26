@@ -5,13 +5,11 @@ export async function initiateDeviceLogin(configuration, request, handlers = {})
     if (handlers.onUserCode !== undefined) {
         handlers.onUserCode(response.userCode, page);
     }
-    if (handlers.openBrowser !== undefined) {
-        try {
-            await handlers.openBrowser(page);
-        }
-        catch {
-            // The printed link still works.
-        }
+    const openBrowser = handlers.openBrowser;
+    if (openBrowser !== undefined) {
+        // Never wait on the opener: some block until the browser exits, and
+        // polling must start before the code expires. The printed link still works.
+        void Promise.resolve().then(() => openBrowser(page)).catch(() => undefined);
     }
     return {
         deviceCode: response.deviceCode,

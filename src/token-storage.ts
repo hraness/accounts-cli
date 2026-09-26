@@ -88,7 +88,9 @@ export function createKeychainTokenStorage(
     backend: "keychain",
     deleteRefreshToken: async () => {
       if (!onMac) return;
-      await run(["delete-generic-password", "-s", serviceName, "-a", accountName]);
+      const result = await run(["delete-generic-password", "-s", serviceName, "-a", accountName]);
+      // A missing item is already signed out; anything else left the token in place.
+      if (result.status !== 0 && result.status !== ITEM_NOT_FOUND) throw deleteError(result.status);
     },
     loadRefreshToken: async () => {
       if (!onMac) return null;
@@ -135,6 +137,16 @@ function writeError(status: number): KeychainError {
     return new KeychainError("keychain-denied", "Keychain access was denied, so the sign-in wasn't saved.", "Sign in again and choose Allow when macOS asks.", status);
   }
   return new KeychainError("keychain-write-failed", "Couldn't save the sign-in to your keychain.", "Sign in again. If it keeps failing, check your login keychain in Keychain Access.", status);
+}
+
+function deleteError(status: number): KeychainError {
+  if (status === INTERACTION_NOT_ALLOWED) {
+    return new KeychainError("keychain-locked", "Your login keychain is locked, so the sign-in wasn't removed.", "Unlock your login keychain, then sign out again.", status);
+  }
+  if (status === AUTH_FAILED || status === USER_CANCELED) {
+    return new KeychainError("keychain-denied", "Keychain access was denied, so the sign-in wasn't removed.", "Sign out again and choose Allow when macOS asks.", status);
+  }
+  return new KeychainError("keychain-unavailable", "Couldn't remove the sign-in from your keychain.", "Open Keychain Access, delete the item, then try again.", status);
 }
 
 const runSecurity: SecurityRunner = async (args, stdin) => {

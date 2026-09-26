@@ -89,11 +89,17 @@ export function renderDeviceLoginResult(result: DeviceLoginResult, options: Devi
     case "expired_token":
       text = `✗ The sign-in code expired before it was approved.\n${retry}`;
       break;
-    case "error":
-      text = result.error === "timeout"
-        ? `✗ Sign-in timed out waiting for approval in the browser.\n${retry}`
-        : `✗ Couldn't sign in to ${product}: ${plain(result.errorDescription ?? result.error, 160).replace(/\.$/u, "")}.\n${retry}`;
+    case "error": {
+      if (result.error === "timeout") {
+        text = `✗ Sign-in timed out waiting for approval in the browser.\n${retry}`;
+        break;
+      }
+      const reason = [result.errorDescription, result.error]
+        .map(value => value === null ? "" : plain(value, 160).replace(/\.$/u, ""))
+        .find(value => value !== "");
+      text = `✗ Couldn't sign in to ${product}${reason === undefined ? "" : `: ${reason}`}.\n${retry}`;
       break;
+    }
   }
   return symbols(`${text}\n`, options);
 }

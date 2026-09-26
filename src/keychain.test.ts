@@ -85,9 +85,17 @@ describe("keychain reads", () => {
     expect(security.calls).toHaveLength(0);
   });
 
-  test("delete names the item without any secret", async () => {
+  test("delete names the item without any secret; a missing item is already signed out", async () => {
     const security = fake({ "delete-generic-password": 44 });
     await createKeychainTokenStorage("svc", "acct", { runSecurity: security.run, platform: "darwin" }).deleteRefreshToken();
     expect(security.calls[0]!.args).toEqual(["delete-generic-password", "-s", "svc", "-a", "acct"]);
+  });
+
+  test("a delete that left the token in place throws instead of reporting sign-out", async () => {
+    for (const [status, code] of [[36, "keychain-locked"], [51, "keychain-denied"], [128, "keychain-denied"], [2, "keychain-unavailable"]] as const) {
+      const storage = createKeychainTokenStorage("svc", "acct", { runSecurity: fake({ "delete-generic-password": status }).run, platform: "darwin" });
+      const error = await storage.deleteRefreshToken().catch((caught: unknown) => caught);
+      expect((error as KeychainError).code).toBe(code);
+    }
   });
 });
