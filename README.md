@@ -14,7 +14,7 @@ expires.
 The package is not on npm. Pin a release tag:
 
 ```json
-{ "dependencies": { "@hraness/accounts-cli": "github:hraness/accounts-cli#v0.1.3" } }
+{ "dependencies": { "@hraness/accounts-cli": "github:hraness/accounts-cli#v0.2.0" } }
 ```
 
 The built `dist/` is committed, so installing from GitHub needs no build step.
@@ -32,12 +32,18 @@ import {
   createKeychainTokenStorage,
   initiateDeviceLogin,
   pollForDeviceToken,
+  renderDeviceLogin,
+  renderDeviceLoginResult,
 } from "@hraness/accounts-cli";
 
 const login = await initiateDeviceLogin(
   { deviceAuthorizationEndpoint, deviceTokenEndpoint },
   { clientId, scopes: ["openid", "profile", "email", "offline_access"] },
-  { onUserCode: (code, url) => console.error(`Open ${url} and enter ${code}`) },
+  {
+    onUserCode: (code, url) => process.stderr.write(renderDeviceLogin({
+      product: "My CLI", url, code, complete: url.includes(code),
+    })),
+  },
 );
 
 const result = await pollForDeviceToken(
@@ -48,13 +54,30 @@ const result = await pollForDeviceToken(
 
 const session = createCliSession({
   clientId,
-  storage: createKeychainTokenStorage("my-cli", "default"),
+  storage: createKeychainTokenStorage("my-cli", "default", { product: "My CLI" }),
   tokenEndpoint,
 });
 if (result.kind === "token") await session.saveRefreshToken(result.refreshToken);
+process.stderr.write(renderDeviceLoginResult(result, { product: "My CLI", loginCommand: "my-cli login", next: "my-cli status" }));
 
 const accessToken = await session.getAccessToken(); // null when signed out
 ```
+
+While it waits, `renderDeviceLogin` prints:
+
+```text
+→ Sign in to My CLI: https://accounts.hraness.com/device?code=WDJB-MJHT
+  Check the code in your browser matches: WDJB-MJHT
+  Waiting for approval… (Ctrl-C to cancel)
+```
+
+`renderDeviceLoginResult` then prints one line and one next step:
+`✓ Signed in to My CLI.` / `Next: my-cli status`, or, for example,
+`✗ Sign-in was declined in the browser.` / `→ my-cli login`. Both fall back to
+ASCII (`->`, `OK`, `FAIL`) when `TERM=dumb`, the locale is not UTF-8, or
+`HRANESS_ASCII=1`, and strip control characters from server text. Pass an
+`openBrowser(url)` handler to `initiateDeviceLogin` to open the page yourself;
+this package never opens a browser.
 
 `initiateDeviceLogin` returns the user code, the verification URL, the device
 code, the polling interval, and a `poll()` function that makes one token
@@ -79,15 +102,32 @@ refresh token the server returns. It returns `null` when no refresh token is
 stored, when the token endpoint answers with an error status, or when the
 response lacks an access token or a positive `expires_in`. A network failure or
 a non-JSON response throws. `signOut()` clears the cached token and deletes the
-stored refresh token; it does not revoke the token with Accounts.
+stored refresh token; it does not revoke the token with Accounts, so say
+"signed out on this device" (`renderSignedOut(product)`).
 
 ## Token storage
 
 | Function | Where the refresh token lives |
 | --- | --- |
-| `createKeychainTokenStorage(service, account)` | The macOS login keychain, through the `security` command. On other platforms saving throws `Keychain storage is only supported on macOS.`, and reading returns `null`. |
+| `createKeychainTokenStorage(service, account, { product })` | The macOS login keychain, through `/usr/bin/security`. The item is labeled `{product} sign-in` with a comment that says what it is and that deleting it signs out on this Mac. The token never appears in a process argument list: it goes to `security -i` on stdin, hex-encoded. On other platforms saving throws `Keychain storage is only supported on macOS.`, and reading returns `null`. |
 | `createEncryptedFileTokenStorage(path)` | A file written with mode `0600` and encrypted with AES-256-GCM. The key is derived from the host name, user name, platform, and home directory, which are not secret, so the file permissions are the main protection. |
 | `createMemoryTokenStorage()` | Memory only, for tests and single-run tools. |
+
+Reading from the keychain returns `null` only when there is no item. A locked
+keychain, a denied access prompt, or any other `security` failure throws a
+`KeychainError` with a `code` (`keychain-locked`, `keychain-denied`,
+`keychain-unavailable`, or `keychain-write-failed` for saves), a one-sentence
+`message`, and one `next` step such as `Unlock your login keychain, then try
+again.` `renderKeychainError(error)` prints both lines. Products should show
+it rather than treat the person as signed out.
+
+## Menu rows
+
+`accountMenuItems(state)` returns desktop-foundation menu kit v2 rows for the
+account: signed out (`status.signedOut` "Signed out" and the primary
+`Sign in` action, which opens the browser), expired (`Sign in again`), a locked
+keychain (`status.locked`), or signed in (`Sign out`, with the account as its
+subtitle). Action IDs default to `account.signIn` and `account.signOut`.
 
 ## Development
 

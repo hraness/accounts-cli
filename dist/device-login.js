@@ -1,8 +1,17 @@
 import { initiateSuiteOidcDeviceAuthorization, pollSuiteOidcDeviceToken, } from "@hraness/suite-accounts/oidc-device-code";
 export async function initiateDeviceLogin(configuration, request, handlers = {}) {
     const { poll, response } = await initiateSuiteOidcDeviceAuthorization(configuration, request);
+    const page = response.verificationUriComplete ?? response.verificationUri;
     if (handlers.onUserCode !== undefined) {
-        handlers.onUserCode(response.userCode, response.verificationUriComplete ?? response.verificationUri);
+        handlers.onUserCode(response.userCode, page);
+    }
+    if (handlers.openBrowser !== undefined) {
+        try {
+            await handlers.openBrowser(page);
+        }
+        catch {
+            // The printed link still works.
+        }
     }
     return {
         deviceCode: response.deviceCode,
