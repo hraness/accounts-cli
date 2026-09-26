@@ -2,20 +2,130 @@ import { createHash, randomBytes, createCipheriv, createDecipheriv } from "node:
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, hostname, platform, userInfo } from "node:os";
 import { join } from "node:path";
-export function createKeychainTokenStorage(serviceName, accountName) {
+/**
+ * A keychain failure that is not "signed out". `message` is one sentence a
+ * product can print as is; `next` is the one thing the person can do.
+ */
+export class KeychainError extends Error {
+    code;
+    next;
+    /** The `security` exit status, when there was one. */
+    status;
+    constructor(code, message, next, status) {
+        super(message);
+        this.name = "KeychainError";
+        this.code = code;
+        this.next = next;
+        this.status = status;
+    }
+}
+// security(1) exit statuses are the low byte of the OSStatus.
+const ITEM_NOT_FOUND = 44; // errSecItemNotFound (-25300)
+const INTERACTION_NOT_ALLOWED = 36; // errSecInteractionNotAllowed (-25308): locked, no UI
+const AUTH_FAILED = 51; // errSecAuthFailed (-25293): wrong password or denied
+const USER_CANCELED = 128; // userCanceledErr (-128)
+/**
+ * Refresh-token storage in the macOS login keychain through `security`. The
+ * token never appears in a process argument list: writes go through
+ * `security -i` on stdin with the value hex-encoded (`-X`).
+ */
+export function createKeychainTokenStorage(serviceName, accountName, options = {}) {
+    const product = options.product ?? serviceName;
+    const label = options.label ?? `${product} sign-in`;
+    const comment = options.comment
+        ?? `Hraness Accounts refresh token for ${product}. Delete it to sign out on this Mac.`;
+    for (const value of [serviceName, accountName, product, label, comment]) {
+        if (!keychainText(value))
+            throw new TypeError("Keychain names must be 1 to 255 characters with no quotes, backslashes or control characters.");
+    }
+    const run = options.runSecurity ?? runSecurity;
+    const onMac = (options.platform ?? platform()) === "darwin";
     return {
         backend: "keychain",
         deleteRefreshToken: async () => {
-            await deleteKeychainEntry(serviceName, accountName);
+            if (!onMac)
+                return;
+            const result = await run(["delete-generic-password", "-s", serviceName, "-a", accountName]);
+            // A missing item is already signed out; anything else left the token in place.
+            if (result.status !== 0 && result.status !== ITEM_NOT_FOUND)
+                throw deleteError(result.status);
         },
         loadRefreshToken: async () => {
-            return await readKeychainEntry(serviceName, accountName);
+            if (!onMac)
+                return null;
+            const result = await run(["find-generic-password", "-s", serviceName, "-a", accountName, "-w"]);
+            if (result.status === 0)
+                return result.stdout.replace(/\r?\n$/u, "");
+            if (result.status === ITEM_NOT_FOUND)
+                return null;
+            throw readError(result.status);
         },
         saveRefreshToken: async (token) => {
-            await writeKeychainEntry(serviceName, accountName, token);
+            if (!onMac)
+                throw new Error("Keychain storage is only supported on macOS.");
+            if (token.length === 0)
+                throw new TypeError("The refresh token is empty.");
+            const hex = Buffer.from(token, "utf8").toString("hex");
+            const command = ["add-generic-password", "-U", "-s", quote(serviceName), "-a", quote(accountName),
+                "-l", quote(label), "-j", quote(comment), "-X", hex].join(" ");
+            const result = await run(["-i"], `${command}\n`);
+            if (result.status !== 0)
+                throw writeError(result.status);
         },
     };
 }
+function keychainText(value) {
+    return value.length > 0 && value.length <= 255 && !/["\\\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(value);
+}
+function quote(value) {
+    return `"${value}"`;
+}
+function readError(status) {
+    if (status === INTERACTION_NOT_ALLOWED) {
+        return new KeychainError("keychain-locked", "Your login keychain is locked.", "Unlock your login keychain, then try again.", status);
+    }
+    if (status === AUTH_FAILED || status === USER_CANCELED) {
+        return new KeychainError("keychain-denied", "Keychain access to your sign-in was denied.", "Try again and choose Allow when macOS asks.", status);
+    }
+    return new KeychainError("keychain-unavailable", "Couldn't read your sign-in from the keychain.", "Open Keychain Access and check that your login keychain is available, then try again.", status);
+}
+function writeError(status) {
+    if (status === INTERACTION_NOT_ALLOWED) {
+        return new KeychainError("keychain-locked", "Your login keychain is locked, so the sign-in wasn't saved.", "Unlock your login keychain, then sign in again.", status);
+    }
+    if (status === AUTH_FAILED || status === USER_CANCELED) {
+        return new KeychainError("keychain-denied", "Keychain access was denied, so the sign-in wasn't saved.", "Sign in again and choose Allow when macOS asks.", status);
+    }
+    return new KeychainError("keychain-write-failed", "Couldn't save the sign-in to your keychain.", "Sign in again. If it keeps failing, check your login keychain in Keychain Access.", status);
+}
+function deleteError(status) {
+    if (status === INTERACTION_NOT_ALLOWED) {
+        return new KeychainError("keychain-locked", "Your login keychain is locked, so the sign-in wasn't removed.", "Unlock your login keychain, then sign out again.", status);
+    }
+    if (status === AUTH_FAILED || status === USER_CANCELED) {
+        return new KeychainError("keychain-denied", "Keychain access was denied, so the sign-in wasn't removed.", "Sign out again and choose Allow when macOS asks.", status);
+    }
+    return new KeychainError("keychain-unavailable", "Couldn't remove the sign-in from your keychain.", "Open Keychain Access, delete the item, then try again.", status);
+}
+const runSecurity = async (args, stdin) => {
+    const { spawn } = await import("node:child_process");
+    return await new Promise(resolve => {
+        let stdout = "";
+        let settled = false;
+        const finish = (status) => {
+            if (settled)
+                return;
+            settled = true;
+            resolve({ status, stdout });
+        };
+        const child = spawn("/usr/bin/security", [...args], { stdio: ["pipe", "pipe", "ignore"] });
+        child.stdout.setEncoding("utf8").on("data", (chunk) => { stdout += chunk; });
+        child.on("error", () => finish(-1));
+        child.on("close", code => finish(code ?? -1));
+        child.stdin.on("error", () => { });
+        child.stdin.end(stdin ?? "");
+    });
+};
 export function createEncryptedFileTokenStorage(filePath) {
     return {
         backend: "encrypted-file",
@@ -57,46 +167,6 @@ export function createMemoryTokenStorage() {
             stored = token;
         },
     };
-}
-// ---------------------------------------------------------------------------
-// Keychain helpers (macOS `security` CLI; other platforms return null/throw)
-// ---------------------------------------------------------------------------
-async function readKeychainEntry(service, account) {
-    if (platform() !== "darwin")
-        return null;
-    const { execFile } = await import("node:child_process");
-    return new Promise(resolve => {
-        execFile("security", ["find-generic-password", "-s", service, "-a", account, "-w"], (error, stdout) => {
-            if (error !== null) {
-                resolve(null);
-                return;
-            }
-            resolve(stdout.trim());
-        });
-    });
-}
-async function writeKeychainEntry(service, account, value) {
-    if (platform() !== "darwin") {
-        throw new Error("Keychain storage is only supported on macOS.");
-    }
-    const { execFile } = await import("node:child_process");
-    return new Promise((resolve, reject) => {
-        execFile("security", ["add-generic-password", "-s", service, "-a", account, "-w", value, "-U"], error => {
-            if (error !== null) {
-                reject(new Error("Failed to write to the keychain."));
-                return;
-            }
-            resolve();
-        });
-    });
-}
-async function deleteKeychainEntry(service, account) {
-    if (platform() !== "darwin")
-        return;
-    const { execFile } = await import("node:child_process");
-    return new Promise(resolve => {
-        execFile("security", ["delete-generic-password", "-s", service, "-a", account], () => resolve());
-    });
 }
 // ---------------------------------------------------------------------------
 // Encrypted file helpers (AES-256-GCM with a machine-bound key)

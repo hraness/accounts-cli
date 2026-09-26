@@ -1,8 +1,15 @@
 import { initiateSuiteOidcDeviceAuthorization, pollSuiteOidcDeviceToken, } from "@hraness/suite-accounts/oidc-device-code";
 export async function initiateDeviceLogin(configuration, request, handlers = {}) {
     const { poll, response } = await initiateSuiteOidcDeviceAuthorization(configuration, request);
+    const page = response.verificationUriComplete ?? response.verificationUri;
     if (handlers.onUserCode !== undefined) {
-        handlers.onUserCode(response.userCode, response.verificationUriComplete ?? response.verificationUri);
+        handlers.onUserCode(response.userCode, page);
+    }
+    const openBrowser = handlers.openBrowser;
+    if (openBrowser !== undefined) {
+        // Never wait on the opener: some block until the browser exits, and
+        // polling must start before the code expires. The printed link still works.
+        void Promise.resolve().then(() => openBrowser(page)).catch(() => undefined);
     }
     return {
         deviceCode: response.deviceCode,
