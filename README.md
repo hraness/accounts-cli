@@ -170,3 +170,7 @@ bun run check
 ```
 
 `bun run check` runs lint, typecheck, tests, and the build.
+
+## License
+
+[MIT](LICENSE)
