@@ -44,7 +44,10 @@ export function accountVerbs(options) {
     const signIn = plain(options.signInCommand, 200);
     if (signIn === "")
         throw new TypeError("signInCommand is required.");
-    const usageError = options.usageError ?? ((message) => new TypeError(message));
+    if (typeof options.usageError !== "function") {
+        throw new TypeError("usageError is required: pass (message) => new HranessError(\"usage\", message).");
+    }
+    const usageError = options.usageError;
     const status = Object.freeze({
         path: Object.freeze(["account", "status"]),
         opClass: "read",

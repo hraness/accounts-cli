@@ -96,9 +96,36 @@ describe("accountVerbs in a desktop-foundation registry", () => {
     expect((JSON.parse(c.out()) as { error: { code: string } }).error.code).toBe("usage");
   });
 
+  test("extra arguments to signout are a usage error too, and nothing is signed out", async () => {
+    const c = capture();
+    let signedOut = false;
+    const code = await runCli(registry({ kind: "signedIn" }, async () => { signedOut = true; }), ["account", "signout", "extra", "--json"], c.io);
+    expect(code).toBe(2);
+    expect((JSON.parse(c.out()) as { error: { code: string } }).error.code).toBe("usage");
+    expect(signedOut).toBe(false);
+  });
+
   test("invalid options are refused", () => {
-    const base = { signInCommand: "x login", readState: async () => ({ kind: "signedOut" as const }), signOut: async () => {} };
+    const base = {
+      signInCommand: "x login",
+      readState: async () => ({ kind: "signedOut" as const }),
+      signOut: async () => {},
+      usageError: (message: string) => new HranessError("usage", message),
+    };
     expect(() => accountVerbs({ ...base, product: "Ghostget" })).toThrow(TypeError);
     expect(() => accountVerbs({ ...base, product: "ghostget", signInCommand: "" })).toThrow(TypeError);
+  });
+
+  test("usageError is required, so extra arguments can never surface as internal (exit 1)", () => {
+    const { usageError: _omitted, ...withoutUsageError } = {
+      product: "ghostget",
+      signInCommand: "ghostget login",
+      readState: async () => ({ kind: "signedOut" as const }),
+      signOut: async () => {},
+      usageError: (message: string) => new HranessError("usage", message),
+    };
+    void _omitted;
+    // @ts-expect-error usageError is a required option.
+    expect(() => accountVerbs(withoutUsageError)).toThrow(/usageError is required/u);
   });
 });

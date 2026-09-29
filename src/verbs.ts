@@ -60,10 +60,12 @@ export type AccountVerbOptions = Readonly<{
   signOut: () => Promise<void>;
   /**
    * Builds the error for unexpected arguments. Pass
-   * `(message) => new HranessError("usage", message)` so the registry answers
-   * `usage` (exit 2). Defaults to a `TypeError`.
+   * `(message) => new HranessError("usage", message)` from
+   * `@hraness/desktop-foundation/registry` so the registry answers `usage`
+   * (exit 2). Required: this package can't build a `HranessError` itself, and
+   * any other error would reach the registry as `internal` (exit 1).
    */
-  usageError?: (message: string) => Error;
+  usageError: (message: string) => Error;
 }>;
 
 const PRODUCT = /^[a-z][a-z0-9-]{0,31}$/u;
@@ -108,7 +110,10 @@ export function accountVerbs(
   const name = plain(options.displayName ?? options.product, 48);
   const signIn = plain(options.signInCommand, 200);
   if (signIn === "") throw new TypeError("signInCommand is required.");
-  const usageError = options.usageError ?? ((message: string) => new TypeError(message));
+  if (typeof options.usageError !== "function") {
+    throw new TypeError("usageError is required: pass (message) => new HranessError(\"usage\", message).");
+  }
+  const usageError = options.usageError;
 
   const status: AccountVerb<AccountStatus> = Object.freeze({
     path: Object.freeze(["account", "status"]),

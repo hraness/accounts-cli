@@ -56,10 +56,12 @@ export type AccountVerbOptions = Readonly<{
     signOut: () => Promise<void>;
     /**
      * Builds the error for unexpected arguments. Pass
-     * `(message) => new HranessError("usage", message)` so the registry answers
-     * `usage` (exit 2). Defaults to a `TypeError`.
+     * `(message) => new HranessError("usage", message)` from
+     * `@hraness/desktop-foundation/registry` so the registry answers `usage`
+     * (exit 2). Required: this package can't build a `HranessError` itself, and
+     * any other error would reach the registry as `internal` (exit 1).
      */
-    usageError?: (message: string) => Error;
+    usageError: (message: string) => Error;
 }>;
 /** The `<product>.account/1` data for a state. */
 export declare function accountStatus(state: AccountState, signInCommand: string): AccountStatus;

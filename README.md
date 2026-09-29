@@ -156,8 +156,11 @@ reports no sign-out. Sign-in stays the product's own command, because the
 person approves it in the browser. `accountStatus(state, signInCommand)`
 returns the same `data` for products that build their own status verb.
 
-This package doesn't depend on desktop-foundation: the verbs match its `Verb`
-shape. Menu rows (`accountMenuItems`) are gone with the menu bar companions.
+`usageError` is required. This package doesn't depend on desktop-foundation,
+so it can't build the registry's `HranessError` itself; pass
+`(message) => new HranessError("usage", message)` so extra arguments answer
+`usage` (exit 2) rather than `internal` (exit 1). The verbs match the
+registry's `Verb` shape. Menu rows (`accountMenuItems`) are gone with the menu bar companions.
 
 ## Development
 
