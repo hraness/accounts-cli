@@ -76,43 +76,4 @@ export function renderSignedOut(product, options = {}) {
 export function renderKeychainError(error, options = {}) {
     return symbols(`✗ ${error.message}\n→ ${error.next}\n`, options);
 }
-const MENU_ACTION_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
-/**
- * Standard account rows for a menu kit v2 snapshot.
- *
- * - Signed out or expired: a top-section status row and the menu's primary
- *   `Sign in` action (opens the browser). Put both in the top section.
- * - Locked keychain: a `status.locked` row and no action.
- * - Signed in: one `Sign out` action, with the account as its subtitle, for the
- *   controls section.
- */
-export function accountMenuItems(state, options = {}) {
-    const signInId = options.signInId ?? "account.signIn";
-    const signOutId = options.signOutId ?? "account.signOut";
-    for (const id of [signInId, signOutId]) {
-        if (!MENU_ACTION_ID.test(id) || id.startsWith("foundation."))
-            throw new TypeError("Invalid account menu action ID.");
-    }
-    const signIn = (label) => Object.freeze({
-        kind: "action", id: signInId, label, symbol: "action.signIn", role: "primary", opens: "browser",
-    });
-    switch (state.kind) {
-        case "signedOut":
-            return Object.freeze([Object.freeze({ kind: "status", symbol: "status.signedOut", label: "Signed out" }), signIn("Sign in")]);
-        case "expired":
-            return Object.freeze([
-                Object.freeze({ kind: "status", symbol: "status.signedOut", label: "Signed out", detail: "Your sign-in expired" }),
-                signIn("Sign in again"),
-            ]);
-        case "locked":
-            return Object.freeze([Object.freeze({ kind: "status", symbol: "status.locked", label: "Keychain is locked", detail: "Unlock it to use your sign-in" })]);
-        case "signedIn": {
-            const subtitle = state.account === undefined ? undefined : plain(state.account, 80);
-            return Object.freeze([Object.freeze({
-                    kind: "action", id: signOutId, label: "Sign out", symbol: "action.signOut",
-                    ...(subtitle === undefined || subtitle === "" ? {} : { subtitle }),
-                })]);
-        }
-    }
-}
 //# sourceMappingURL=render.js.map

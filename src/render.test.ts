@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { accountMenuItems, renderDeviceLogin, renderDeviceLoginResult, renderKeychainError, renderSignedOut } from "./render";
+import { renderDeviceLogin, renderDeviceLoginResult, renderKeychainError, renderSignedOut } from "./render";
 import { KeychainError } from "./token-storage";
 
 const utf8 = { env: { LANG: "en_US.UTF-8" } };
@@ -66,34 +66,5 @@ describe("other human lines", () => {
   test("keychain errors read as two lines", () => {
     const error = new KeychainError("keychain-locked", "Your login keychain is locked.", "Unlock your login keychain, then try again.", 36);
     expect(renderKeychainError(error, utf8)).toBe("✗ Your login keychain is locked.\n→ Unlock your login keychain, then try again.\n");
-  });
-});
-
-describe("accountMenuItems", () => {
-  test("signed out: a status row and the primary Sign in action", () => {
-    expect(accountMenuItems({ kind: "signedOut" })).toEqual([
-      { kind: "status", symbol: "status.signedOut", label: "Signed out" },
-      { kind: "action", id: "account.signIn", label: "Sign in", symbol: "action.signIn", role: "primary", opens: "browser" },
-    ]);
-  });
-  test("expired sign-in asks to sign in again", () => {
-    expect(accountMenuItems({ kind: "expired" }, { signInId: "login" })).toEqual([
-      { kind: "status", symbol: "status.signedOut", label: "Signed out", detail: "Your sign-in expired" },
-      { kind: "action", id: "login", label: "Sign in again", symbol: "action.signIn", role: "primary", opens: "browser" },
-    ]);
-  });
-  test("a locked keychain is a status, not a sign-out", () => {
-    expect(accountMenuItems({ kind: "locked" })).toEqual([
-      { kind: "status", symbol: "status.locked", label: "Keychain is locked", detail: "Unlock it to use your sign-in" },
-    ]);
-  });
-  test("signed in: Sign out with the account as subtitle", () => {
-    expect(accountMenuItems({ kind: "signedIn", account: "ben@example.com" })).toEqual([
-      { kind: "action", id: "account.signOut", label: "Sign out", symbol: "action.signOut", subtitle: "ben@example.com" },
-    ]);
-    expect(accountMenuItems({ kind: "signedIn" })).toEqual([{ kind: "action", id: "account.signOut", label: "Sign out", symbol: "action.signOut" }]);
-  });
-  test("reserved or malformed IDs are refused", () => {
-    for (const id of ["foundation.login", "", "a b"]) expect(() => accountMenuItems({ kind: "signedOut" }, { signInId: id })).toThrow(TypeError);
   });
 });

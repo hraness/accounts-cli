@@ -1,6 +1,6 @@
 {
   "name": "@hraness/accounts-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI authentication SDK for Hraness Accounts.",
   "license": "MIT",
   "type": "module",
@@ -50,6 +50,7 @@
     "@hraness/suite-accounts": "github:hraness/suite-accounts#v0.9.13"
   },
   "devDependencies": {
+    "@hraness/desktop-foundation": "https://github.com/hraness/desktop-foundation/releases/download/v0.9.0/hraness-desktop-foundation-0.9.0.tgz",
     "@types/bun": "^1.3.14",
     "@types/node": "^24.10.1",
     "eslint": "^9.39.2",

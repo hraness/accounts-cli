@@ -21,16 +21,21 @@ export {
   type CliSessionOptions,
 } from "./cli-session.js";
 export {
-  accountMenuItems,
   renderDeviceLogin,
   renderDeviceLoginResult,
   renderKeychainError,
   renderSignedOut,
-  type AccountMenuActionRow,
-  type AccountMenuOptions,
-  type AccountMenuState,
-  type AccountMenuStatusRow,
   type DeviceLoginOutcomeOptions,
   type DeviceLoginPrompt,
   type RenderOptions,
 } from "./render.js";
+export {
+  accountStatus,
+  accountVerbs,
+  type AccountSignOutResult,
+  type AccountState,
+  type AccountStatus,
+  type AccountVerb,
+  type AccountVerbArgs,
+  type AccountVerbOptions,
+} from "./verbs.js";

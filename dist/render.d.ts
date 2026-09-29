@@ -44,54 +44,5 @@ export declare function renderDeviceLoginResult(result: DeviceLoginResult, optio
 export declare function renderSignedOut(product: string, options?: RenderOptions): string;
 /** Two lines for a keychain failure: what happened, then the one thing to do. */
 export declare function renderKeychainError(error: KeychainError, options?: RenderOptions): string;
-/**
- * Shapes mirror `StatusItemV2` and `ActionItemV2` from
- * `@hraness/desktop-foundation`; this package does not depend on it.
- */
-export type AccountMenuStatusRow = Readonly<{
-    kind: "status";
-    symbol: "status.signedOut" | "status.locked";
-    label: string;
-    detail?: string;
-}>;
-export type AccountMenuActionRow = Readonly<{
-    kind: "action";
-    id: string;
-    label: string;
-    symbol: "action.signIn" | "action.signOut";
-    subtitle?: string;
-    role?: "primary";
-    opens?: "browser";
-}>;
-export type AccountMenuState = Readonly<{
-    kind: "signedIn";
-    account?: string;
-}> | Readonly<{
-    kind: "signedOut";
-}>
-/** The stored sign-in was rejected and the person must sign in again. */
- | Readonly<{
-    kind: "expired";
-}>
-/** The keychain is locked, so the product can't read the sign-in. */
- | Readonly<{
-    kind: "locked";
-}>;
-export type AccountMenuOptions = Readonly<{
-    /** Action ID for Sign in. Default `account.signIn`. */
-    signInId?: string;
-    /** Action ID for Sign out. Default `account.signOut`. */
-    signOutId?: string;
-}>;
-/**
- * Standard account rows for a menu kit v2 snapshot.
- *
- * - Signed out or expired: a top-section status row and the menu's primary
- *   `Sign in` action (opens the browser). Put both in the top section.
- * - Locked keychain: a `status.locked` row and no action.
- * - Signed in: one `Sign out` action, with the account as its subtitle, for the
- *   controls section.
- */
-export declare function accountMenuItems(state: AccountMenuState, options?: AccountMenuOptions): readonly (AccountMenuStatusRow | AccountMenuActionRow)[];
 export {};
 //# sourceMappingURL=render.d.ts.map
