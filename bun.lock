@@ -11,6 +11,7 @@
         "@types/bun": "^1.3.14",
         "@types/node": "^24.10.1",
         "eslint": "^9.39.2",
+        "@hraness/desktop-foundation": "https://github.com/hraness/desktop-foundation/releases/download/v0.9.0/hraness-desktop-foundation-0.9.0.tgz",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.70.0",
       },
@@ -106,6 +107,8 @@
     "@eslint/object-schema": ["@eslint/object-schema@2.1.7", "", {}, "sha512-VtAOaymWVfZcmZbp6E2mympDIHvyjXs/12LqWYjVw6qjrfF+VK+fyG33kChz3nnK+SU5/NeHOqrTEHS8sXO3OA=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
+
+    "@hraness/desktop-foundation": ["@hraness/desktop-foundation@https://github.com/hraness/desktop-foundation/releases/download/v0.9.0/hraness-desktop-foundation-0.9.0.tgz", { "bin": { "companion": "./dist/src/cli.js" } }, "sha512-+TlrHoM1wZ2rE4p3u1CIAz1+aGKPZhmiNOKjEKOYPZmTx8BFSyFLPeL06tupfX2WxcRzRZ3QwmOsyjlgSu/p1Q=="],
 
     "@hraness/result": ["@hraness/result@github:hraness/result#17b311c", {}, "hraness-result-17b311c", "sha512-OzIzJ598pWxKqpuYO+Omki/LYlhZ+bg04u7N0DuhW9FoAruP3ocRs4eyCyWxEEa4gtpEG9AEaTlheYnDlXh2mQ=="],
 

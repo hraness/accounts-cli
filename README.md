@@ -123,13 +123,41 @@ again.` Deleting throws the same way when the item stays in place, so
 `renderKeychainError(error)` prints both lines. Products should show
 it rather than treat the person as signed out.
 
-## Menu rows
+## Account verbs
 
-`accountMenuItems(state)` returns desktop-foundation menu kit v2 rows for the
-account: signed out (`status.signedOut` "Signed out" and the primary
-`Sign in` action, which opens the browser), expired (`Sign in again`), a locked
-keychain (`status.locked`), or signed in (`Sign out`, with the account as its
-subtitle). Action IDs default to `account.signIn` and `account.signOut`.
+`accountVerbs(options)` returns two verbs for a desktop-foundation registry,
+so every product answers `account status` and `account signout` the same way:
+
+```ts
+import { HranessError, defineRegistry } from "@hraness/desktop-foundation/registry";
+import { accountVerbs } from "@hraness/accounts-cli";
+
+const registry = defineRegistry("ghostget", [
+  ...productVerbs,
+  ...accountVerbs({
+    product: "ghostget",
+    displayName: "Ghostget",
+    signInCommand: "ghostget login",
+    readState: async () => ({ kind: "signedIn", account: "ben@example.com" }),
+    signOut: () => session.signOut(),
+    usageError: (message) => new HranessError("usage", message),
+  }),
+]);
+```
+
+`account status` is a read verb. With `--json` it prints a
+`<product>.account/1` envelope whose `data` is `{ state, account?, detail?,
+signIn? }`: `state` is `signedIn`, `signedOut`, `expired` or `locked`, and
+`signIn` holds the sign-in command when the person needs it. A locked keychain
+is `locked`, not signed out. `account signout` is an operate verb that calls
+your `signOut` and prints `{ "signedOut": true }` under
+`<product>.account-signout/1`; if `signOut` throws, the command fails and
+reports no sign-out. Sign-in stays the product's own command, because the
+person approves it in the browser. `accountStatus(state, signInCommand)`
+returns the same `data` for products that build their own status verb.
+
+This package doesn't depend on desktop-foundation: the verbs match its `Verb`
+shape. Menu rows (`accountMenuItems`) are gone with the menu bar companions.
 
 ## Development
 
