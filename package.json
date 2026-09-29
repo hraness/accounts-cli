@@ -1,6 +1,6 @@
 {
   "name": "@hraness/accounts-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI authentication SDK for Hraness Accounts.",
   "license": "MIT",
   "type": "module",

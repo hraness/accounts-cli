@@ -14,7 +14,7 @@ expires.
 The package is not on npm. Pin a release tag:
 
 ```json
-{ "dependencies": { "@hraness/accounts-cli": "github:hraness/accounts-cli#v0.2.0" } }
+{ "dependencies": { "@hraness/accounts-cli": "github:hraness/accounts-cli#v0.3.0" } }
 ```
 
 The built `dist/` is committed, so installing from GitHub needs no build step.
