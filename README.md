@@ -20,6 +20,16 @@ The package is not on npm. Pin a release tag:
 The built `dist/` is committed, so installing from GitHub needs no build step.
 This release depends on `@hraness/suite-accounts` v0.9.13.
 
+## Choose token storage
+
+Use the macOS keychain for a CLI that needs sign-in to survive a restart on
+macOS. For a portable first integration or a test, use
+`createMemoryTokenStorage()`; the refresh token disappears when the process
+ends. Encrypted file storage works without the keychain, but its key is derived
+from non-secret machine information. Do not treat it as protection from another
+process running as your user. See [Token storage](#token-storage) for failure
+handling and platform behavior.
+
 ## Sign in
 
 Accounts assigns each product a client ID and the device authorization,
@@ -92,6 +102,20 @@ the interval the server asks for. It returns one of:
 | `access_denied` | The user declined. |
 | `expired_token` | The device code expired before approval. |
 | `error` | Any other failure, with `error` and `errorDescription`. A timeout reports `error: "timeout"`; a token response without a refresh token reports `invalid_response`. |
+
+## Recover a failed sign-in
+
+| Result | Next action |
+| --- | --- |
+| `access_denied` | Start a new login only when you want to approve it in the browser. |
+| `expired_token` or `error: "timeout"` | Start a new login to get a fresh code; do not reuse the expired device code. |
+| Keychain error | Show `renderKeychainError(error)` and follow its `next` step. Do not erase the stored token or report a sign-out. |
+| `getAccessToken()` returns `null` | Ask for sign-in again before calling your authenticated API. |
+| `getAccessToken()` throws | Handle the network, JSON, or storage failure separately from a signed-out state. |
+
+Never print either token to confirm success. Use the rendered sign-in result,
+then make an authenticated request to your product's API. The package handles
+tokens; your CLI decides which API to call and how to display its result.
 
 ## Keep the session
 
