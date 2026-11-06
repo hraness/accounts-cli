@@ -1,7 +1,7 @@
 {
   "name": "@hraness/accounts-cli",
   "version": "0.3.0",
-  "description": "CLI authentication SDK for Hraness Accounts.",
+  "description": "OAuth device-login and token-storage helpers for command-line tools.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

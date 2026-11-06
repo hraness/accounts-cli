@@ -1,7 +1,10 @@
 # @hraness/accounts-cli
 
-Sign a command-line tool in to Hraness Accounts and keep its refresh token
-between runs.
+OAuth device-login and token-storage helpers for command-line tools.
+
+The hosted Hraness Accounts login is retired. Its URLs below are historical
+examples. Existing pinned releases and the configurable protocol and storage
+helpers are preserved.
 
 The package uses the OAuth 2.0 device authorization grant: your CLI prints a
 link and a code, the user approves the sign-in in a browser, and the CLI
